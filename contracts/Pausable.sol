@@ -3,7 +3,7 @@ pragma solidity ^0.5.0;
 import "./Ownable.sol";
 
 contract Pausable is Ownable{
-    bool isRunning;
+    bool private isRunning;
     
     event LogPausedContract(address sender);
     event LogResumedContract(address sender);
@@ -20,6 +20,10 @@ contract Pausable is Ownable{
     
     constructor(bool _state) public{
         isRunning = _state;
+    }
+
+    function getisRunning() public view returns(bool){
+        return isRunning;
     }
     
     function pauseContract() public onlyOwner onlyIfRunning returns (bool success){

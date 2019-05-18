@@ -24,14 +24,14 @@ contract Remittance is Pausable {
     mapping (bytes32 => remit) remitmap ; // stores all the remittances with key as 2-factor OTP hash
 
     // constructor
-    constructor (uint _maxTime) Pausable( _state) public {
+    constructor (uint _maxTime, bool _state) Pausable(_state) public {
         require(_maxTime > 0, "Future deadline time > 0");
         maxTimeLimit = _maxTime;
         emit LogContractCreated(msg.sender,maxTimeLimit);
     }
 
     // Alice can deposit
-    function sendRemit(bytes32 _hashedPwd, uint _deadline ) public payable onlyIfRunning {
+    function sendRemit(bytes32 _hashedPwd, uint _deadline) public payable onlyIfRunning {
 
         //Restricting use of duplicate passwords
         require (remitmap[_hashedPwd].sender == address(0),"Password already in use.");

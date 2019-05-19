@@ -23,21 +23,18 @@ contract("Remittance contract main test cases", accounts => {
     });
 
 
-	it("should be able to SEND funds for remittance", async () => {
+    it("should be able to SEND funds for remittance", async () => {
 
         //Creating a remittance and capturing the transaction object
-        const txObj = await instance.sendRemit("asdf123", 604800, { from: account1, value: 10 });
-
+        const txObj = await instance.sendRemit("asdf123", 604800, { from: account1, value: 10 })        
         // Check if transaction status is true
-        assert.isTrue(txObj.receipt.status, "Transaction failed..Could not send funds");
-
+        assert.isTrue(txObj.receipt.status, "Transaction failed..Could not send funds")     
         // check event and its values
         const event = getEventResult(txObj, "LogSendFunds");
         assert.isDefined(event, "it should emit LogSendFunds");
         assert.strictEqual(event.sender, account1, "event: sender not valid");
         assert.strictEqual(event.amount.toString(), "10", "event: amount not valid");
-        assert.strictEqual(event.expireTime.toString(), "604800", "event: deadline not valid");
-
+        assert.strictEqual(event.expireTime.toString(), "604800", "event: deadline not valid")      
         // Check for data i.e if the remittance order was created
         const Remitmap = await instance.remitmap.call("asdf123", {from: account1});
         assert.strictEqual(Remitmap.sender, account1, "sender not valid");

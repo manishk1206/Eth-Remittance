@@ -1,11 +1,11 @@
 pragma solidity ^0.5.0;
 
-import "./Safemath.sol";
+import "./SafeMath.sol";
 import "./Pausable.sol";
 
 contract Remittance is Pausable {
 
-    using Safemath for uint;
+    using SafeMath for uint;
 
     event LogContractCreated (address indexed owner,uint indexed expireTime );
     event LogSendFunds(address indexed sender, uint indexed amount, uint expireTime);

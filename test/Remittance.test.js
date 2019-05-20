@@ -1,13 +1,34 @@
 const Remittance = artifacts.require("Remittance");
 const truffleAssert = require('truffle-assertions');
+const helper = require("./helpers/timeTravelHelper");
 
 contract("Remittance contract main test cases", accounts => {
-	const [owner, account1, account2, account3] = accounts;
-	let instance;
+    const [owner, account1, account2, account3] = accounts;
+    let instance;
 
-	beforeEach('Deploying fresh contract instance before each test', async function () {
+    beforeEach('Deploying fresh contract instance before each test', async function () {
         instance = await Remittance.new(1296000,true, {from:owner}); // 1296000 is  maxTimeLimit of 15 days in seconds
     })
+    
+    describe("Testing Helper Functions", () => {
+    it("should advance the blockchain forward a block", async () =>{
+        const originalBlockHash = web3.eth.getBlock('latest').hash;
+        let newBlockHash = web3.eth.getBlock('latest').hash;
+
+        newBlockHash = await helper.advanceBlock();
+
+        assert.notEqual(originalBlockHash, newBlockHash);
+    });
+
+    it("should be able to advance time and block together", async () => {
+        const advancement = 600; //in seconds
+        const originalBlock = web3.eth.getBlock('latest');
+        const newBlock = await helper.advanceTimeAndBlock(advancement);
+        const timeDiff = newBlock.timestamp - originalBlock.timestamp;
+
+        assert.isTrue(timeDiff >= advancement);
+    });
+    });
 
     it("Revert invalid attempts to send funds", async () => {
 
@@ -97,8 +118,8 @@ contract("Remittance contract main test cases", accounts => {
         assert.strictEqual(newBalance.toString(),expectedBalance.toString(), "New balance does not match expected balance");
 
     });
-
-    it("should be possible to CLAIM-BACK funds by the sender", async () => {
+    
+    it("should NOT be possible to CLAIM-BACK funds before deadline", async () => {
 
         let smsOtp = "aBc123xYz";
         let remittance = 100;
@@ -108,14 +129,34 @@ contract("Remittance contract main test cases", accounts => {
         // Creating a remittance order(send)
         await instance.sendRemit(hashPwd,604800, { from: account1, value: remittance });
 
-        // Get the remit mapping values for validation
-        const Remitmap = await instance.remitmap.call(hashPwd, {from: account1});
+        //Passing time less than 7 days
+        await helper.advanceTimeAndBlock(86400 * 3); //3 days later
+        
+        // Trying to claim funds, should fail
+        await truffleAssert.fails(
+        instance.claimBackRemit(hashPwd, { from: account1 })
+        );
 
+    });
+
+    it("should be possible to CLAIM-BACK funds by the sender after deadline", async () => {
+
+        let smsOtp = "aBc123xYz";
+        let remittance = 100;
+        // Creating hash password from OTP and receiver
+        let hashPwd = await instance.getOtpHash(smsOtp, account2).call();
+
+        // Creating a remittance order(send)
+        await instance.sendRemit(hashPwd,604800, { from: account1, value: remittance });
+        
+        //Passing time more than 7 days
+        await helper.advanceTimeAndBlock(86400 * 8); //8 days later
+        
         // Revert when trying to  claim using wrong address
         await truffleAssert.fails(
         instance.claimBackRemit(hashPwd, {from: account3}));
 
-        // Claiming of funds by the correct address
+        // Claiming of funds by the correct address and after deadline, should succeed
         let preBalance = await web3.eth.getBalance(account1);
 
         const txObj = await instance.claimBackRemit(hashPwd, { from: account1 });

@@ -10,26 +10,6 @@ contract("Remittance contract main test cases", accounts => {
         instance = await Remittance.new(1296000,true, {from:owner}); // 1296000 is  maxTimeLimit of 15 days in seconds
     })
     
-    describe("Testing Helper Functions", () => {
-    it("should advance the blockchain forward a block", async () =>{
-        const originalBlockHash = web3.eth.getBlock('latest').hash;
-        let newBlockHash = web3.eth.getBlock('latest').hash;
-
-        newBlockHash = await helper.advanceBlock();
-
-        assert.notEqual(originalBlockHash, newBlockHash);
-    });
-
-    it("should be able to advance time and block together", async () => {
-        const advancement = 600; //in seconds
-        const originalBlock = web3.eth.getBlock('latest');
-        const newBlock = await helper.advanceTimeAndBlock(advancement);
-        const timeDiff = newBlock.timestamp - originalBlock.timestamp;
-
-        assert.isTrue(timeDiff >= advancement);
-    });
-    });
-
     it("Revert invalid attempts to send funds", async () => {
 
         // revert when value is 0
@@ -85,12 +65,12 @@ contract("Remittance contract main test cases", accounts => {
 
         // Revert when trying to  withdraw using wrong OTP
         await truffleAssert.fails(
-        instance.withdrawRemit("1234xyz", { from: account2})
+        instance.withdrawRemit("1234xyz", { from: account2}), "wrong OTP"
         );
 
         // Revert when trying to  withdraw using wrong address
         await truffleAssert.fails(
-        instance.withdrawRemit("1234xyz", { from: account3})
+        instance.withdrawRemit("1234xyz", { from: account3}), "wrong user"
         );
     });
 
@@ -134,7 +114,7 @@ contract("Remittance contract main test cases", accounts => {
         
         // Trying to claim funds, should fail
         await truffleAssert.fails(
-        instance.claimBackRemit(hashPwd, { from: account1 })
+        instance.claimBackRemit(hashPwd, { from: account1 }), "trying before deadline"
         );
 
     });
@@ -154,7 +134,7 @@ contract("Remittance contract main test cases", accounts => {
         
         // Revert when trying to  claim using wrong address
         await truffleAssert.fails(
-        instance.claimBackRemit(hashPwd, {from: account3}));
+        instance.claimBackRemit(hashPwd, {from: account3}), "wrong user");
 
         // Claiming of funds by the correct address and after deadline, should succeed
         let preBalance = await web3.eth.getBalance(account1);

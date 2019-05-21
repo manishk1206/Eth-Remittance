@@ -18,11 +18,11 @@ contract Pausable is Ownable{
         _;
     }
     
-    constructor(bool _state) public{
+    constructor(bool _initialState) public{
         isRunning = _state;
     }
 
-    function getisRunning() public view returns(bool){
+    function getIsRunning() public view returns(bool){
         return isRunning;
     }
     

@@ -31,7 +31,7 @@ contract Remittance is Pausable {
     }
 
     // Alice can deposit
-    function sendRemit(bytes32 _hashedPwd, uint _deadline) public payable onlyIfRunning {
+    function sendRemit(bytes32 _hashedPwd, uint _deadline) public payable onlyIfAllowed onlyIfRunning {
 
         //Restricting use of duplicate passwords
         require (remitmap[_hashedPwd].sender == address(0), "Password already in use.");

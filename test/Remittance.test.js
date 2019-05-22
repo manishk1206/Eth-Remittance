@@ -57,6 +57,7 @@ contract("Remittance contract main test cases", accounts => {
     it("Revert invalid or malicious attempts to withdraw funds", async () => {
 
         let smsOtp = "aBc123xYz";
+        let wrongOtp = "1234blabla";
         // Creating hash password from OTP and receiver
         let hashPwd = await instance.getOtpHash(smsOtp, account2).call();
 
@@ -65,7 +66,7 @@ contract("Remittance contract main test cases", accounts => {
 
         // Revert when trying to  withdraw using wrong OTP
         await truffleAssert.fails(
-        instance.withdrawRemit(smsOtp, { from: account2}), "wrong OTP"
+        instance.withdrawRemit(wrongOtp, { from: account2}), "wrong OTP"
         );
 
         // Revert when trying to  withdraw using wrong address

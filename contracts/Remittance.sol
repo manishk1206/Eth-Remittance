@@ -31,7 +31,7 @@ contract Remittance is Pausable {
     }
 
     // Alice can deposit
-    function sendRemit(bytes32 _hashedPwd, uint _deadline) public payable onlyIfAllowed onlyIfRunning {
+    function sendRemit(bytes32 _hashedPwd, uint _deadline) public payable  onlyIfRunning {
 
         //Restricting use of duplicate passwords
         require (remitmap[_hashedPwd].sender == address(0), "Password already in use.");
@@ -39,11 +39,12 @@ contract Remittance is Pausable {
         require (msg.value > 0, "There should be some non-zero value to split" );
         require(_deadline <= maxTimeLimit, "Please lower the expiry time and try again" );
 
-        Remit.amount = msg.value;
-        Remit.sender = msg.sender;
-        Remit.expiry = now.add(_deadline);
-
-        remitmap[_hashedPwd] = Remit; // mapping to original hashed Password
+        Remit memory newRemit;
+        newRemit.amount = msg.value;
+        newRemit.sender = msg.sender;
+        newRemit.expiry = now.add(_deadline);
+        
+        remitmap[_hashedPwd] = newRemit; // storing the new values in the mapping
         emit LogSendFunds(msg.sender, msg.value, _deadline);
 
      }
@@ -57,7 +58,7 @@ contract Remittance is Pausable {
         uint balance = remitmap[hashedPwd].amount;
         require(balance > 0, "Balance zero. Either already Remitted or claimed");
         remitmap[hashedPwd].amount = 0;
-        remitmap[_hashedPwd].expiry = 0;
+        remitmap[hashedPwd].expiry = 0;
         emit LogWithdrawnFunds(msg.sender, balance);
         msg.sender.transfer(balance);
 
@@ -79,7 +80,7 @@ contract Remittance is Pausable {
     }
 
     // get the hash using Bob's sms and Carol's address, done off-chain
-    function getOtpHash (bytes32 _smsOtp , address _receiver) pure external returns(bytes32 hash){
+    function getOtpHash (bytes32 _smsOtp , address _receiver) public view returns(bytes32 hash){
         return keccak256(abi.encodePacked(_smsOtp, _receiver, address(this)));
     }
 

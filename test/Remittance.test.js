@@ -65,12 +65,12 @@ contract("Remittance contract main test cases", accounts => {
 
         // Revert when trying to  withdraw using wrong OTP
         await truffleAssert.fails(
-        instance.withdrawRemit("1234xyz", { from: account2}), "wrong OTP"
+        instance.withdrawRemit(smsOtp, { from: account2}), "wrong OTP"
         );
 
         // Revert when trying to  withdraw using wrong address
         await truffleAssert.fails(
-        instance.withdrawRemit("1234xyz", { from: account3}), "wrong user"
+        instance.withdrawRemit(smsOtp, { from: account3}), "wrong user"
         );
     });
 

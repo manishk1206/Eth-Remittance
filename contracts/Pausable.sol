@@ -4,9 +4,11 @@ import "./Ownable.sol";
 
 contract Pausable is Ownable{
     bool private isRunning;
+    bool private depositAllowed = true;
     
     event LogPausedContract(address sender);
     event LogResumedContract(address sender);
+    event LogPausedDeposit(address sender);
     
     modifier onlyIfRunning {
         require(isRunning);
@@ -18,12 +20,21 @@ contract Pausable is Ownable{
         _;
     }
     
+    modifier onlyIfAllowed {
+        require(depositAllowed);
+        _;
+    }
+    
     constructor(bool _initialState) public{
-        isRunning = _state;
+        isRunning = _initialState;
     }
 
     function getIsRunning() public view returns(bool){
         return isRunning;
+    }
+    
+    function getDepositAllowed() public view returns(bool){
+        return depositAllowed;
     }
     
     function pauseContract() public onlyOwner onlyIfRunning returns (bool success){
@@ -35,6 +46,12 @@ contract Pausable is Ownable{
     function resumeContract() public onlyOwner onlyIfPaused returns (bool success){
         isRunning = true;
         emit LogResumedContract(msg.sender);
+        return true;
+    }
+    
+    function pauseDeposit() public onlyOwner returns (bool success){
+        depositAllowed = false;
+        emit LogPausedDeposit(msg.sender);
         return true;
     }
     

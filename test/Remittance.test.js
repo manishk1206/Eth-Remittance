@@ -2,6 +2,8 @@ const Remittance = artifacts.require("Remittance");
 const truffleAssert = require('truffle-assertions');
 const helper = require("./helpers/timeTravelHelper");
 
+const { BN, toWei } = web3.utils;
+
 contract("Remittance contract main test cases", accounts => {
     const [owner, account1, account2, account3] = accounts;
     let instance;
@@ -56,8 +58,8 @@ contract("Remittance contract main test cases", accounts => {
 
     it("Revert invalid or malicious attempts to withdraw funds", async () => {
 
-        let smsOtp = "aBc123xYz";
-        let wrongOtp = "1234blabla";
+        const smsOtp = "aBc123xYz";
+        const wrongOtp = "1234blabla";
         // Creating hash password from OTP and receiver
         let hashPwd = await instance.getOtpHash(smsOtp, account2).call();
 
@@ -77,8 +79,9 @@ contract("Remittance contract main test cases", accounts => {
 
     it("should be possible to WITHDRAW funds by the correct receiver", async () => {
 
-        let smsOtp = "aBc123xYz";
-        let remittance = 100;
+        const smsOtp = "aBc123xYz";
+        const remittance = toWei('100', 'Gwei');
+        
         // Creating hash password from OTP and receiver
         let hashPwd = await instance.getOtpHash(smsOtp, account2).call();
 
@@ -87,23 +90,29 @@ contract("Remittance contract main test cases", accounts => {
 
         // withdrawal of funds by the correct otp and receiver
         let preBalance = await web3.eth.getBalance(account2); // balance before withdrawal
-
+         
         const txObj = await instance.withdrawRemit(smsOtp, { from: account2 });
         assert.isTrue(txObj.receipt.status, "Transaction failed..Could not withdraw funds");
 
         let tx = await web3.eth.getTransaction(txObj.tx);
         let gasCost = tx.gasPrice * txObj.receipt.gasUsed;
-        let expectedBalance = preBalance + remittance  - gasCost ;
 
-        let newBalance = await web3.eth.getBalance(account2); // balance after withdrawal
-        assert.strictEqual(newBalance.toString(),expectedBalance.toString(), "New balance does not match expected balance");
+        //Casting returned string values to BigNumber 
+        const remittanceBN = new BN(remittance); 
+        const preBalanceBN = new BN(preBalance);
+        const gasCostBN = new BN(gasCost);
+        let expectedBalance = preBalanceBN.add(remittanceBN).sub(gasCostBN);
+        
+        let newBalance = await web3.eth.getBalance(account2); // balance after withdrawal returned as string
+        
+        assert.strictEqual(newBalance, expectedBalance.toString(), "New balance does not match expected balance");
 
     });
     
     it("should NOT be possible to CLAIM-BACK funds before deadline", async () => {
 
         let smsOtp = "aBc123xYz";
-        let remittance = 100;
+        let remittance = toWei('100', 'Gwei');
         // Creating hash password from OTP and receiver
         let hashPwd = await instance.getOtpHash(smsOtp, account2).call();
 
@@ -123,7 +132,7 @@ contract("Remittance contract main test cases", accounts => {
     it("should be possible to CLAIM-BACK funds by the sender after deadline", async () => {
 
         let smsOtp = "aBc123xYz";
-        let remittance = 100;
+        let remittance = toWei('100', 'Gwei');
         // Creating hash password from OTP and receiver
         let hashPwd = await instance.getOtpHash(smsOtp, account2).call();
 
@@ -145,10 +154,16 @@ contract("Remittance contract main test cases", accounts => {
 
         let tx = await web3.eth.getTransaction(txObj.tx);
         let gasCost = tx.gasPrice * txObj.receipt.gasUsed;
-        let expectedBalance = preBalance + remittance  - gasCost ;
+        
+        //Casting returned string values to BigNumber 
+        const remittanceBN = new BN(remittance); 
+        const preBalanceBN = new BN(preBalance);
+        const gasCostBN = new BN(gasCost);
+        
+        let expectedBalance = preBalanceBN.add(remittanceBN).sub(gasCostBN);
 
-        let newBalance = await web3.eth.getBalance(account1);
-        assert.strictEqual(newBalance.toString(),expectedBalance.toString(), "New balance does not match expected balance");
+        let newBalance = await web3.eth.getBalance(account1); //already a string, so not casted below
+        assert.strictEqual(newBalance, expectedBalance.toString(), "New balance does not match expected balance");
 
     });
 });

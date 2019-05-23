@@ -2,7 +2,7 @@ const Remittance = artifacts.require("Remittance");
 const truffleAssert = require('truffle-assertions');
 const helper = require("./helpers/timeTravelHelper");
 
-const { BN, toWei } = web3.utils;
+const { toBN , toWei } = web3.utils;
 
 contract("Remittance contract main test cases", accounts => {
     const [owner, account1, account2, account3] = accounts;
@@ -39,10 +39,10 @@ contract("Remittance contract main test cases", accounts => {
         assert.strictEqual(event.amount.toString(), "10", "event: amount not valid");
         assert.strictEqual(event.expireTime.toString(), "604800", "event: deadline not valid")      
         // Check for data i.e if the remittance order was created
-        const Remitmap = await instance.remitmap.call("asdf123", {from: account1});
-        assert.strictEqual(Remitmap.sender, account1, "sender not valid");
-        assert.strictEqual(Remitmap.amount.toString(),"10", "amount not valid");
-        assert.strictEqual(Remitmap.expireTime.toString(), "604800", "deadline not valid");
+        const remitOrder = await instance.remitmap.call("asdf123", {from: account1});
+        assert.strictEqual(remitOrder.sender, account1, "sender not valid");
+        assert.strictEqual(remitOrder.amount.toString(),"10", "amount not valid");
+        assert.strictEqual(remitOrder.expireTime.toString(), "604800", "deadline not valid");
 
     });
 
@@ -98,10 +98,7 @@ contract("Remittance contract main test cases", accounts => {
         let gasCost = tx.gasPrice * txObj.receipt.gasUsed;
 
         //Casting returned string values to BigNumber 
-        const remittanceBN = new BN(remittance); 
-        const preBalanceBN = new BN(preBalance);
-        const gasCostBN = new BN(gasCost);
-        let expectedBalance = preBalanceBN.add(remittanceBN).sub(gasCostBN);
+        let expectedBalance = toBN(preBalance).add(toBN(remittance)).sub(toBN(gasCost));
         
         let newBalance = await web3.eth.getBalance(account2); // balance after withdrawal returned as string
         
@@ -155,12 +152,7 @@ contract("Remittance contract main test cases", accounts => {
         let tx = await web3.eth.getTransaction(txObj.tx);
         let gasCost = tx.gasPrice * txObj.receipt.gasUsed;
         
-        //Casting returned string values to BigNumber 
-        const remittanceBN = new BN(remittance); 
-        const preBalanceBN = new BN(preBalance);
-        const gasCostBN = new BN(gasCost);
-        
-        let expectedBalance = preBalanceBN.add(remittanceBN).sub(gasCostBN);
+        let expectedBalance = toBN(preBalance).add(toBN(remittance)).sub(toBN(gasCost));
 
         let newBalance = await web3.eth.getBalance(account1); //already a string, so not casted below
         assert.strictEqual(newBalance, expectedBalance.toString(), "New balance does not match expected balance");
